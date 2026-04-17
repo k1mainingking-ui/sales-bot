@@ -42,22 +42,26 @@ class SalesBot:
         self.db.add_or_update_user(user.id, user.username, user.first_name, user.last_name)
         
         welcome_text = f"""
-🎉 Welcome to Sales AI Agent, {user.first_name}!
+✨ Добро пожаловать, {user.first_name}!
 
-I'm your intelligent shopping assistant. I can help you:
-✅ Browse our product catalog
-✅ Answer questions about products
-✅ Process your orders
-✅ Track deliveries
+Вас приветствует бутик красоты Factura 💅
 
-What would you like to do today?
+Ваш личный помощник для записи на процедуры.
+
+Я могу помочь вам:
+✅ Просмотреть список наших услуг
+✅ Записаться на приём
+✅ Получить консультацию
+✅ Узнать цены и акции
+
+Выберите что вас интересует:
         """
         
         keyboard = [
-            [InlineKeyboardButton("📦 View Catalog", callback_data='catalog')],
-            [InlineKeyboardButton("🛒 View Cart", callback_data='cart')],
-            [InlineKeyboardButton("❓ Ask a Question", callback_data='qa')],
-            [InlineKeyboardButton("📋 My Orders", callback_data='orders')]
+            [InlineKeyboardButton("💆‍♀️ Наши услуги", callback_data='services')],
+            [InlineKeyboardButton("📞 Записаться на приём", callback_data='book')],
+            [InlineKeyboardButton("❓ Задать вопрос", callback_data='qa')],
+            [InlineKeyboardButton("📍 Наши контакты", callback_data='contacts')]
         ]
         reply_markup = InlineKeyboardMarkup(keyboard)
         
@@ -71,11 +75,11 @@ What would you like to do today?
         keyboard = []
         for category in PRODUCT_CATEGORIES:
             keyboard.append([InlineKeyboardButton(f"📂 {category}", callback_data=f'cat_{category}')])
-        keyboard.append([InlineKeyboardButton("🔍 Search", callback_data='search')])
-        keyboard.append([InlineKeyboardButton("⬅️ Back", callback_data='back')])
+        keyboard.append([InlineKeyboardButton("🔍 Поиск", callback_data='search')])
+        keyboard.append([InlineKeyboardButton("⬅️ Назад", callback_data='back')])
         
         reply_markup = InlineKeyboardMarkup(keyboard)
-        await query.edit_message_text("Select a category:", reply_markup=reply_markup)
+        await query.edit_message_text("Выберите категорию:", reply_markup=reply_markup)
     
     async def show_category(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
         """Show products in category"""
@@ -86,18 +90,18 @@ What would you like to do today?
         products = self.db.get_products_by_category(category)
         
         if not products:
-            await query.edit_message_text(f"No products found in {category}")
+            await query.edit_message_text(f"Товары в категории {category} не найдены")
             return
         
-        text = f"📦 {category} Products:\n\n"
+        text = f"📦 Товары категории {category}:\n\n"
         keyboard = []
         
         for product in products:
-            stock_status = "✅ In Stock" if product['stock'] > 0 else "❌ Out of Stock"
-            text += f"{product['emoji']} {product['name']}\n💰 ${product['price']:.2f} {stock_status}\n\n"
-            keyboard.append([InlineKeyboardButton(f"View {product['name']}", callback_data=f'prod_{product['product_id']}')])
+            stock_status = "✅ В наличии" if product['stock'] > 0 else "❌ Нет в наличии"
+            text += f"{product['emoji']} {product['name']}\n💰 {product['price']:.2f} ₽ {stock_status}\n\n"
+            keyboard.append([InlineKeyboardButton(f"Посмотреть {product['name']}", callback_data=f'prod_{product["product_id"]}')])
         
-        keyboard.append([InlineKeyboardButton("⬅️ Back", callback_data='catalog')])
+        keyboard.append([InlineKeyboardButton("⬅️ Назад", callback_data='catalog')])
         reply_markup = InlineKeyboardMarkup(keyboard)
         
         await query.edit_message_text(text, reply_markup=reply_markup)
@@ -110,18 +114,18 @@ What would you like to do today?
         
         product = self.db.get_product(product_id)
         if not product:
-            await query.edit_message_text("Product not found")
+            await query.edit_message_text("Товар не найден")
             return
         
-        stock_status = "✅ In Stock" if product['stock'] > 0 else "❌ Out of Stock"
+        stock_status = "✅ В наличии" if product['stock'] > 0 else "❌ Нет в наличии"
         text = f"""
 {product['emoji']} {product['name']}
 
-💰 Price: ${product['price']:.2f}
-📊 Stock: {product['stock']} units
-⭐ Rating: {product['rating']}/5 ({product['reviews_count']} reviews)
+💰 Цена: {product['price']:.2f} ₽
+📊 На складе: {product['stock']} шт.
+⭐ Рейтинг: {product['rating']}/5 (отзывов: {product['reviews_count']})
 
-📝 Description:
+📝 Описание:
 {product['description']}
 
 {stock_status}
@@ -129,8 +133,8 @@ What would you like to do today?
         
         keyboard = []
         if product['stock'] > 0:
-            keyboard.append([InlineKeyboardButton("➕ Add to Cart", callback_data=f'addcart_{product_id}')])
-        keyboard.append([InlineKeyboardButton("⬅️ Back", callback_data='catalog')])
+            keyboard.append([InlineKeyboardButton("➕ В корзину", callback_data=f'addcart_{product_id}')])
+        keyboard.append([InlineKeyboardButton("⬅️ Назад", callback_data='catalog')])
         
         reply_markup = InlineKeyboardMarkup(keyboard)
         await query.edit_message_text(text, reply_markup=reply_markup)
@@ -145,11 +149,11 @@ What would you like to do today?
         product = self.db.get_product(product_id)
         self.db.add_to_cart(user_id, product_id, 1)
         
-        await query.edit_message_text(f"✅ {product['name']} added to cart!")
+        await query.edit_message_text(f"✅ {product['name']} добавлен в корзину!")
         
         keyboard = [
-            [InlineKeyboardButton("🛒 View Cart", callback_data='cart')],
-            [InlineKeyboardButton("📦 Continue Shopping", callback_data='catalog')]
+            [InlineKeyboardButton("🛒 Посмотреть корзину", callback_data='cart')],
+            [InlineKeyboardButton("📦 Продолжить покупки", callback_data='catalog')]
         ]
         reply_markup = InlineKeyboardMarkup(keyboard)
         await query.edit_message_reply_markup(reply_markup=reply_markup)
@@ -163,13 +167,13 @@ What would you like to do today?
         cart = self.db.get_cart(user_id)
         
         if not cart:
-            await query.edit_message_text("Your cart is empty")
-            keyboard = [[InlineKeyboardButton("📦 Browse Products", callback_data='catalog')]]
+            await query.edit_message_text("Ваша корзина пуста")
+            keyboard = [[InlineKeyboardButton("📦 Смотреть товары", callback_data='catalog')]]
             reply_markup = InlineKeyboardMarkup(keyboard)
             await query.edit_message_reply_markup(reply_markup=reply_markup)
             return
         
-        text = "🛒 Your Cart:\n\n"
+        text = "🛒 Ваша корзина:\n\n"
         total = 0
         keyboard = []
         
@@ -177,13 +181,13 @@ What would you like to do today?
             subtotal = item['price'] * item['quantity']
             total += subtotal
             text += f"{item['emoji']} {item['name']}\n"
-            text += f"   ${item['price']:.2f} x {item['quantity']} = ${subtotal:.2f}\n\n"
-            keyboard.append([InlineKeyboardButton(f"❌ Remove {item['name']}", callback_data=f'remove_{item['product_id']}')])
+            text += f"   {item['price']:.2f} ₽ x {item['quantity']} = {subtotal:.2f} ₽\n\n"
+            keyboard.append([InlineKeyboardButton(f"❌ Удалить {item['name']}", callback_data=f'remove_{item["product_id"]}')])
         
-        text += f"\n💰 Total: ${total:.2f}"
+        text += f"\n💰 Итого: {total:.2f} ₽"
         
-        keyboard.append([InlineKeyboardButton("✅ Checkout", callback_data='checkout')])
-        keyboard.append([InlineKeyboardButton("📦 Continue Shopping", callback_data='catalog')])
+        keyboard.append([InlineKeyboardButton("✅ Оформить заказ", callback_data='checkout')])
+        keyboard.append([InlineKeyboardButton("📦 Продолжить покупки", callback_data='catalog')])
         
         reply_markup = InlineKeyboardMarkup(keyboard)
         await query.edit_message_text(text, reply_markup=reply_markup)
@@ -196,7 +200,7 @@ What would you like to do today?
         
         cart = self.db.get_cart(user_id)
         if not cart:
-            await query.edit_message_text("Your cart is empty")
+            await query.edit_message_text("Ваша корзина пуста")
             return
         
         # Create order
@@ -212,21 +216,21 @@ What would you like to do today?
         self.db.clear_cart(user_id)
         
         confirmation = f"""
-✅ Order Confirmed!
+✅ Заказ подтверждён!
 
-📋 Order ID: {order_id}
-💰 Total: ${total:.2f}
-📅 Date: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
+📋 Номер заказа: {order_id}
+💰 Сумма: {total:.2f} ₽
+📅 Дата: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
 
-Your order has been placed successfully!
-We'll process it shortly and send you tracking information.
+Ваш заказ успешно оформлен!
+Мы скоро обработаем его и отправим вам информацию для отслеживания.
 
-Thank you for your purchase! 🎉
+Спасибо за покупку! 🎉
         """
         
         keyboard = [
-            [InlineKeyboardButton("📦 Continue Shopping", callback_data='catalog')],
-            [InlineKeyboardButton("📋 View Orders", callback_data='orders')]
+            [InlineKeyboardButton("📦 Продолжить покупки", callback_data='catalog')],
+            [InlineKeyboardButton("📋 Посмотреть заказы", callback_data='orders')]
         ]
         reply_markup = InlineKeyboardMarkup(keyboard)
         
@@ -241,24 +245,36 @@ Thank you for your purchase! 🎉
         orders = self.db.get_user_orders(user_id)
         
         if not orders:
-            await query.edit_message_text("You have no orders yet")
-            keyboard = [[InlineKeyboardButton("📦 Start Shopping", callback_data='catalog')]]
+            await query.edit_message_text("У вас пока нет заказов")
+            keyboard = [[InlineKeyboardButton("📦 Начать покупки", callback_data='catalog')]]
             reply_markup = InlineKeyboardMarkup(keyboard)
             await query.edit_message_reply_markup(reply_markup=reply_markup)
             return
         
-        text = "📋 Your Orders:\n\n"
+        text = "📋 Ваши заказы:\n\n"
         keyboard = []
         
         for order in orders:
-            status_emoji = "✅" if order['status'] == 'completed' else "⏳"
+            if order['status'] == 'completed':
+                status_emoji = "✅"
+                status_text = "Выполнен"
+            elif order['status'] == 'pending':
+                status_emoji = "⏳"
+                status_text = "В обработке"
+            elif order['status'] == 'cancelled':
+                status_emoji = "❌"
+                status_text = "Отменён"
+            else:
+                status_emoji = "⏳"
+                status_text = order['status']
+                
             text += f"{status_emoji} {order['order_id']}\n"
-            text += f"   Amount: ${order['total_amount']:.2f}\n"
-            text += f"   Status: {order['status']}\n"
-            text += f"   Date: {order['created_at']}\n\n"
-            keyboard.append([InlineKeyboardButton(f"Details: {order['order_id']}", callback_data=f'orderdet_{order['order_id']}')])
+            text += f"   Сумма: {order['total_amount']:.2f} ₽\n"
+            text += f"   Статус: {status_text}\n"
+            text += f"   Дата: {order['created_at']}\n\n"
+            keyboard.append([InlineKeyboardButton(f"Детали: {order['order_id']}", callback_data=f'orderdet_{order["order_id"]}')])
         
-        keyboard.append([InlineKeyboardButton("⬅️ Back", callback_data='back')])
+        keyboard.append([InlineKeyboardButton("⬅️ Назад", callback_data='back')])
         reply_markup = InlineKeyboardMarkup(keyboard)
         
         await query.edit_message_text(text, reply_markup=reply_markup)
@@ -276,32 +292,126 @@ Thank you for your purchase! 🎉
                 break
         
         if not answer:
-            answer = "I'm not sure about that. Please contact our support team at support@example.com"
+            answer = "Я не уверен в этом. Пожалуйста, свяжитесь с нашей службой поддержки по адресу support@example.com"
         
         self.db.save_qa(user_id, update.message.text, answer)
         await update.message.reply_text(f"💬 {answer}")
     
+    async def services(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
+        """Show beauty salon services"""
+        query = update.callback_query
+        await query.answer()
+        
+        services_list = [
+            {"name": "Маникюр классический", "price": 1500, "emoji": "💅"},
+            {"name": "Маникюр с покрытием гель-лак", "price": 2500, "emoji": "💅"},
+            {"name": "Маникюр с дизайном", "price": 3000, "emoji": "💅"},
+            {"name": "Наращивание ногтей", "price": 3500, "emoji": "💅"},
+            {"name": "Педикюр классический", "price": 1800, "emoji": "🦶"},
+            {"name": "Педикюр с покрытием гель-лак", "price": 2800, "emoji": "🦶"},
+            {"name": "Стрижка женская", "price": 2500, "emoji": "✂️"},
+            {"name": "Стрижка мужская", "price": 1500, "emoji": "✂️"},
+            {"name": "Окрашивание волос", "price": 4500, "emoji": "🎨"},
+            {"name": "Окрашивание в один тон", "price": 3500, "emoji": "🎨"},
+            {"name": "Мелирование волос", "price": 5000, "emoji": "🎨"},
+            {"name": "Укладка волос", "price": 1500, "emoji": "💇‍♀️"},
+            {"name": "Выпрямление волос кератином", "price": 7000, "emoji": "💇‍♀️"},
+            {"name": "Макияж дневной", "price": 2000, "emoji": "💄"},
+            {"name": "Макияж вечерний", "price": 3500, "emoji": "💄"},
+            {"name": "Макияж свадебный", "price": 5000, "emoji": "💄"},
+            {"name": "Чистка лица", "price": 3000, "emoji": "✨"},
+            {"name": "Пилинг лица", "price": 2500, "emoji": "✨"},
+            {"name": "Массаж лица", "price": 2500, "emoji": "😌"},
+            {"name": "Ламинирование бровей", "price": 1800, "emoji": "👁️"},
+            {"name": "Окрашивание бровей и ресниц", "price": 1200, "emoji": "👁️"},
+            {"name": "Биоревитализация лица", "price": 8000, "emoji": "✨"},
+            {"name": "Депиляция воском (руки/ноги)", "price": 2000, "emoji": "🌸"},
+            {"name": "Депиляция сахарная", "price": 2500, "emoji": "🌸"},
+            {"name": "SPA-программа для тела", "price": 5000, "emoji": "🧖‍♀️"},
+            {"name": "Массаж общий", "price": 3500, "emoji": "💆"},
+            {"name": "Обёртывание антицеллюлитное", "price": 4000, "emoji": "🧖‍♀️"},
+        ]
+        
+        text = "✨ Услуги студии красоты Factura:\n\n"
+        keyboard = []
+        
+        for service in services_list:
+            text += f"{service['emoji']} {service['name']}\n   💰 {service['price']} ₽\n\n"
+        
+        keyboard.append([InlineKeyboardButton("📞 Записаться на услугу", callback_data='book')])
+        keyboard.append([InlineKeyboardButton("⬅️ Назад", callback_data='back')])
+        
+        reply_markup = InlineKeyboardMarkup(keyboard)
+        await query.edit_message_text(text, reply_markup=reply_markup)
+    
+    async def book_appointment(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
+        """Book appointment"""
+        query = update.callback_query
+        await query.answer()
+        
+        text = """
+📞 Для записи на приём:
+
+Позвоните нам по телефону: +7 (383) 303-41-42
+Или напишите администратору в WhatsApp
+
+Мы с радостью подберём для вас удобное время!
+
+⏰ График работы:
+Пн-Пт: 09:00 - 21:00
+Сб-Вс: 10:00 - 19:00
+        """
+        
+        keyboard = [[InlineKeyboardButton("⬅️ Назад", callback_data='back')]]
+        reply_markup = InlineKeyboardMarkup(keyboard)
+        
+        await query.edit_message_text(text, reply_markup=reply_markup)
+    
+    async def show_contacts(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
+        """Show contact information"""
+        query = update.callback_query
+        await query.answer()
+        
+        text = """
+📍 Студия красоты Factura
+
+🏠 Адрес: г. Новосибирск, Красный проспект, 123, офис 45
+📞 Телефон: +7 (383) 303-41-42
+📱 WhatsApp: +7 (913) 123-45-67
+📧 Email: info@factura-beauty.ru
+🌐 Сайт: factura-beauty.ru
+
+⏰ График работы:
+Понедельник - Пятница: 09:00 - 21:00
+Суббота: 10:00 - 19:00
+Воскресенье: 10:00 - 18:00
+        """
+        
+        keyboard = [[InlineKeyboardButton("⬅️ Назад", callback_data='back')]]
+        reply_markup = InlineKeyboardMarkup(keyboard)
+        
+        await query.edit_message_text(text, reply_markup=reply_markup)
+
     async def button_callback(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
         """Handle button callbacks"""
         query = update.callback_query
         data = query.data
         
-        if data == 'catalog':
-            await self.catalog(update, context)
-        elif data.startswith('cat_'):
-            await self.show_category(update, context)
-        elif data.startswith('prod_'):
-            await self.show_product(update, context)
-        elif data.startswith('addcart_'):
-            await self.add_to_cart(update, context)
-        elif data == 'cart':
-            await self.view_cart(update, context)
-        elif data == 'checkout':
-            await self.checkout(update, context)
-        elif data == 'orders':
-            await self.view_orders(update, context)
+        if data == 'services':
+            await self.services(update, context)
+        elif data == 'book':
+            await self.book_appointment(update, context)
+        elif data == 'contacts':
+            await self.show_contacts(update, context)
+        elif data == 'qa':
+            await query.answer()
+            await query.edit_message_text("💬 Напишите ваш вопрос и мы с радостью ответим!")
         elif data == 'back':
             await self.start(update, context)
+    
+    async def welcome_new_user(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
+        """Welcome message when user writes first message"""
+        await update.message.reply_text("Добро пожаловать, Вас приветствует бутик красоты Factura, для начала работы нажмите /start")
     
     def run(self):
         """Run the bot"""
@@ -310,7 +420,7 @@ Thank you for your purchase! 🎉
         # Add handlers
         app.add_handler(CommandHandler("start", self.start))
         app.add_handler(CallbackQueryHandler(self.button_callback))
-        app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, self.handle_message))
+        app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, self.welcome_new_user))
         
         logger.info("Bot started successfully")
         app.run_polling()
